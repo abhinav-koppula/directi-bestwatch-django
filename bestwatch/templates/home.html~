@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+<!-- Intro
+================================================== -->
+{% if loginFail %}
+<script type="text/javascript">
+$(document).ready(function() {
+    $('#loginbox').addClass('open');
+    $('#login_username').css({'background-color':'yellow'});
+    $('#login_password').css({'background-color':'yellow'});
+    $('#login_username').attr('placeholder','Invalid Email');
+    $('#login_password').attr('placeholder','and/or Invalid Password');
+});
+</script>
+{% endif %}
+<div class="introtitle">
+    <div class="container">
+        <div class="row-fluid">
+            <div class="span9">
+                <p>
+                    {% load staticfiles %}
+                    <img src="{% static 'img/temp/TV.jpg' %}" 
+                         style="border-bottom-width: 5px; border-bottom-style: solid; border-bottom-color: rgb(204, 204, 204); 
+                         opacity: 0.6;" alt="" class="opacity" />
+                </p>
+            </div>
+            <div class="span3">
+                {% if 'logged_in' in request.session %}
+                <h1 class="title">Trending..</h1>
+                <ul>
+                {if top_rated %}
+                {% for t in top_rated %}
+                    <li><b><a href='/bestwatch/shows/detail/{{ t.id }}' style='color:yellow;'>{{ t.name }}</a></b>&nbsp;&nbsp; rated {{ t.rating }}</li>
+                { % endfor %}
+                </ul>
+                {% else %}
+                <h1 class="title"><i class="icon-user"></i>&nbsp;&nbsp;Register</h1>
+                <form action="/bestwatch/home/" method = "post">{% csrf_token %}
+                {{ form.as_p}}
+                <input type = "submit" value="Sign Up" class="btn btn-large" />
+                </form>
+
+                <h3>Or sign in</h3>
+                
+                <button class="btn btn-facebook" onclick="userLogin()" data-loading-text="Verifying" id="fbloginbtn"><i class="icon-facebook"></i> | Connect with Facebook</a></button>
+                <i id = "fbloader" class="icon-spin icon-refresh" style="display:none;"></i>
+                <!-- Modal -->
+                    <div class="modal hide fade" id="fberrorModal" tabindex="-1" role="dialog" aria-labelledby="fberrorModal" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                                    <h4 class="modal-title" style="color:black";>FB Login Error</h4>
+                                </div>
+                                <div class="modal-body" style="color:black;">
+                                    <p>There was a error authenticating via your fb account. Please make sure you have given all the permissions.</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                                </div>
+                            </div><!-- /.modal-content -->
+                        </div><!-- /.modal-dialog -->
+                    </div>
+                <!-- /.modal -->
+                {% endif %}
+                <br/>  
+            </div>
+
+        </div>
+    </div>
+
+</div>
+</div>
+<!-- END Intro -->
+<div class="container">
+    <!-- MASONRY ITEMS START
+    ================================================== -->
+    <div id="content">
+            {% for show in twelve_random_shows %}
+            <div class="boxportfolio4 gallery" >
+                <img src="/static/img/uploads/{{ show.poster}}" alt="" />
+                <div id="galleryzoom" style="display: none;">
+                    <div class="wrapcaption">
+                        <a href="shows/detail/{{ show.id }}"><i class="icon-link captionicons"></i></a>
+                        <a data-gal="prettyPhoto[gallery1]" href="/static/img/uploads/{{ show.poster }}" title=""><i class="icon-zoom-in captionicons"></i></a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+    </div>
+    <!-- next box etc -->
+    <!-- MASONRY ITEMS END -->
+</div>
+{% endblock %}

@@ -1,0 +1,51 @@
+import hashlib
+from django.db import models
+from django import forms
+
+class Genres(models.Model):
+    name = models.CharField(max_length = 250)
+
+class Login(models.Model):
+    email = models.EmailField(max_length = 255)
+    password = models.CharField(max_length = 255, default = None)
+
+    def __unicode__(self):
+        return self.email
+
+class Shows(models.Model):
+    name = models.CharField(max_length = 255)
+    poster = models.CharField(max_length = 255)
+    summary = models.TextField()
+
+class Users(models.Model):
+    login = models.ForeignKey('Login')
+    name = models.CharField(max_length = 255)
+    profile_pic = models.CharField(max_length = 255)
+
+class Rating_show(models.Model):
+    show = models.ForeignKey('Shows')
+    user = models.ForeignKey('Users')
+    rating  = models.DecimalField(max_digits = 5, decimal_places=2)
+
+class Review_show(models.Model):
+    user = models.ForeignKey('Users')
+    show = models.ForeignKey('Shows')
+    review = models.TextField()
+    
+class Shows_genres(models.Model):
+    show = models.ForeignKey('Shows')
+    genre = models.ForeignKey('Genres')
+
+class RegistrationForm(forms.ModelForm):
+    name = forms.CharField(required=True)
+
+    class Meta:
+        model = Login
+        fields = ['name', 'email', 'password']
+        
+    def save(self, commit=True):
+        passw = self.cleaned_data['password']
+        hashpass = "abc"
+        self.cleaned_data['password'] = hashpass
+        return super(RegistrationForm, self).save()
+

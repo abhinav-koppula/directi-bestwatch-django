@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>BestWatch.com</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        {% load staticfiles %}
+        {% load bestwatch_extras %}
+        <link href="{% static 'css/bootstrap.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/prettyPhoto.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/icons.css' %}" rel="stylesheet" media="screen" />
+        <link href="{% static 'css/custom.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/skindefault.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/bootstrap-responsive.css' %}" rel="stylesheet" />
+        <link href="{% static 'css/social-buttons.css' %}" rel="stylesheet" />
+
+        <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+        <!--[if lt IE 9]>
+              <script src="{% static 'js/html5shiv.js' %}"></script>
+              <link rel="stylesheet" type="text/css" href="{% static 'css/ie.css' %}" />
+            <![endif]-->
+        <!-- Jquery - The rest of the scripts at the bottom-->
+
+        <script src="{% static 'js/jquery-1.9.0.min.js' %}"></script>
+        <script src="{% static 'js/fbscript.js' %}"></script>
+        <script type="text/javascript">
+        $(document).ajaxSend(function(event, xhr, settings) {
+            function getCookie(name) {
+            var cookieValue = null;
+            if (document.cookie && document.cookie != '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                   var cookie = jQuery.trim(cookies[i]);
+                    // Does this cookie string begin with the name we want?
+                    if (cookie.substring(0, name.length + 1) == (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    function sameOrigin(url) {
+        // url could be relative or scheme relative or absolute
+        var host = document.location.host; // host + port
+        var protocol = document.location.protocol;
+        var sr_origin = '//' + host;
+        var origin = protocol + sr_origin;
+        // Allow absolute or scheme relative URLs to same origin
+        return (url == origin || url.slice(0, origin.length + 1) == origin + '/') ||
+            (url == sr_origin || url.slice(0, sr_origin.length + 1) == sr_origin + '/') ||
+            // or any other URL that isn't scheme relative or absolute i.e relative.
+            !(/^(\/\/|http:|https:).*/.test(url));
+    }
+    function safeMethod(method) {
+        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+    }
+
+    if (!safeMethod(settings.type) && sameOrigin(settings.url)) {
+        xhr.setRequestHeader("X-CSRFToken", getCookie('csrftoken'));
+    }
+});
+        $(document).ready(function() {
+            if($("#show_id").length != 0) {
+                $.fn.raty.defaults.path = '/static/js/img/';
+                {% if rating %}
+                rating = {{ rating }}
+                {% else %}
+                rating = 0
+                {% endif %}
+                $('.star').raty({
+                    half: true,
+                    number: 5,
+                    score: rating,
+                    {% if 'logged_in' not in request.session %}
+                    readOnly: true
+                    {% else %}
+                    click: function(score, evt) {
+                        $.post('/bestwatch/add_rating/', {show_id: $('#show_id').val(), score: score},
+                        function(data) {
+                            if(data=="You have already rated")
+                            {
+                                $('#ratingExistsModal').modal('show');
+                            }
+                            else
+                            {
+                                $('.star').raty({
+                                    readOnly: true,
+                                    score: data,
+                                    half: true,
+                                    number: 5
+                                });
+                                $('#ratingtext').html(data);
+                            }
+                       });
+                    }
+                    {% endif %}
+                });
+                $('#ratingtext').html(rating);
+                
+                {% if 'logged_in' in request.session %}
+                $('#save_review_btn').on('click', function()
+                {
+                    var btn = $(this);
+                    btn.button('loading');
+                    $.ajax({
+                        url: '/bestwatch/add_review/',
+                        data: {'show_id': $('#show_id').val(), 'review': $('#review_textarea').val()},
+                        type: "POST",
+                        success: function(data) {
+                            if (data == "true")
+                            {
+                                var li_review = '<li class="span4"><div class="testimonial"><h4><img class="avatarspic" src="{{ request.session.logged_in.profile_pic|check_profpic }}" alt=""></h4><p>' + $('#review_textarea').val() + '</p></div><div class="author-wrapper"><div class="arrow"></div><div class="testimonial-name"><a href="/bestwatch/user/view_detail/{{ request.session.logged_in.login_id }}/">{{ request.session.logged_in.name }}</a></div></div></li>';
+                                $('#show_reviews').append(li_review).fadeIn();
+                                $('#review_modal').modal('hide');
+                             }
+                             else
+                             {
+                                $('#review_textarea').css({"background-color": "yellow"});
+                             }
+                        },
+                        complete: function() {
+                            btn.button('reset');
+                        }    
+                    });
+                });
+                {% endif %}
+            }
+                                  
+            $('#fberrorModal').modal('hide');
+
+            $('#fbloginbtn').click(function() {
+                return false;
+                checkLogin();
+            });
+            $('.gallery').hover(
+                function() {
+                    $(this).find('#galleryzoom').show();
+                },
+                function() {
+                    $(this).find('#galleryzoom').hide();
+                }
+            );
+
+            $("[rel = 'tooltip']").tooltip();
+
+            $('#shows-thumbnails .thumbnail').hover(
+                function() {
+                    $(this).find('.caption').slideDown(250);
+                },
+                function() {
+                    $(this).find('.caption').slideUp(250);
+                }
+            );
+            
+        });
+        </script>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head>
+    <body>
+        <!-- Header
+        ================================================== -->
+        <div class="navbar navbar-inverse navbar-fixed-top">
+            <div class="navbar-inner">
+                <div class="container">
+                    <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="brand" href="/bestwatch/">Best Watch.</a>
+                    <div class="nav-collapse collapse">
+                        <ul class="nav" style="padding-right: 100px;">
+                            <li class="{% active request "^/bestwatch/$" %}"><a href="/bestwatch/">Home</a></li>
+
+                            <li class="dropdown {% active request "^/bestwatch/explore/" %}">
+                                <a href="#" class="dropdown-toggle js-activated" data-toggle="dropdown">Explore <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="/bestwatch/explore/0">All Shows</a></li>
+                                    <li class="nav-header">Genre</li>
+                                    {% for g in all_genres %}
+                                        <li><a href='/bestwatch/explore/{{ g.id }}' >{{ g.name|title }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+
+                            {% if 'logged_in' in request.session %}
+                            <li class="{% active request "^/bestwatch/user/edit/" %}"><a href='/bestwatch/user/edit/'>Welcome, {{ request.session.logged_in.name }}</a></li>
+                            <li><a href='/bestwatch/logout'>Logout</a>
+                            </li>
+                            {% else %}
+                            <li class = "dropdown" id="loginbox">
+                                <a class = "dropdown-toggle" href = "#" data-toggle = "dropdown"> Sign In<strong class = "caret"></strong></a>
+                                <div class="dropdown-menu" style = "padding: 15px; padding-bottom: 0px; float: left;">
+                                    <form action="/bestwatch/checklogin/" method="post" accept-charset="UTF-8">
+{% csrf_token %}
+                                        <input id="login_username" style="margin-bottom: 15px;" type="text" name="login_username" size="30" placeholder="Email addresss"/>
+                                        <input id="login_password" style="margin-bottom: 15px;" type="password" name="login_password" size="30" placeholder ="Password" />
+                                        <input class="btn btn-primary" 
+                                                    style="clear: left; width: 100%; height: 32px; font-size: 13px;" 
+                                                    type="submit" 
+                                                    name="login_btn" 
+                                                    id="login_btn"
+                                                    data-loading-text="Verifying"
+                                                    >
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <!--/.nav-collapse -->
+                </div>
+            </div>
+        </div>
+        
+        
+	{% block content %}
+	{% endblock %}
+
+
+<!-- Footer
+================================================== -->
+    <div class="footer">
+    <div class="container">
+	    <!-- 1st row -->
+	    <div class="row-fluid">
+		    <div class="span12 text-center">
+			    <h1 class="title" style="color:#ccc;">Lets Talk</h1>
+    			<p>
+	    			Contact me for Hugs and Bugs
+	    		</p>
+	    		<span>+91 7899889840</span> or <span>abhinav.koppula@gmail.com</span>
+	    	</div>
+	    </div>
+	    <hr />
+	    <!-- 2nd row -->
+	    <div class="row-fluid">
+	    	<!-- left -->
+	    	<div class="span4 smallspacetop">
+	    		<p class="smaller">
+	    			<span class="copyright">&copy; </span> Abhinav Koppula
+	    		</p>
+	    	</div>
+	    	<!-- middle -->
+	    	<div class="span4">
+	    		<div class="text-center">
+	    			<a class="totop"><i class="icon-chevron-up"></i></a>
+	    		</div>
+	    	</div>
+	    	<!-- right -->
+	    	<div class="span4 smallspacetop">
+	    		<ul class="social-links pull-right">
+	    			<li class="twitter-link">
+	    			<a href="https://twitter.com/mancoolgunda" class="twitter has-tip" target="_blank" title="Follow me on Twitter">Twitter</a>
+	    			</li>
+	    			<li class="facebook-link">
+	        			<a href="https://www.facebook.com/abhinav.koppula" class="facebook has-tip" target="_blank" title="Add me on Face   book">Facebook</a>
+	    			</li>
+	    			<li class="google-link">
+	        			<a href="https://plus.google.com/+AbhinavKoppula" class="google has-tip" title="Google +" target="_blank">Google</a>
+	    			</li>
+	    			<li class="linkedin-link">
+	        			<a href="https://www.linkedin.com/in/abhinavkoppula" class="linkedin has-tip" title="Linkedin" target="_blank">Linkedin</a>
+	    			</li>
+	    		</ul>
+			<div class="clearfix"></div>
+    	    </div>
+		    <!-- end right -->
+    	</div>
+    </div>
+    </div>
+<!-- Le javascript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+    <script src="{% static 'js/bootstrap.js' %}"></script>
+    <script src="{% static 'js/twitter-bootstrap-hover-dropdown.js' %}"></script>
+    <script src="{% static 'js/common.js' %}"></script>
+    <script src="{% static 'js/jquery.prettyPhoto.js' %}"></script>
+    <script src="{% static 'js/jquery.isotope.min.js' %}"></script>
+    <script src="{% static 'js/jquery.raty.min.js' %}"></script>
+    </body>
+</html>
